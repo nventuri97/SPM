@@ -12,6 +12,8 @@
 #include <hpc_helpers.hpp>
 
 #include <barrier>
+#include <atomic>
+using namespace std;
 
 int random(const int &min, const int &max) {
 	static std::mt19937 generator(117);
@@ -25,21 +27,25 @@ void work(std::chrono::microseconds w) {
     while(std::chrono::steady_clock::now() < end);	
 }
 
-//Function that compute the wave front in a static parallel way, a thread compute the corresponding element % number of threads
-void staticParallelWavefront(const std::vector<int> &M, const uint64_t &N, const int &numThreads){
+void dynamicParallelWavefront(const std::vector<int> &M, const uint64_t &N, const uint64_t &numThreads){
+	
+	std::atomic<uint64_t> counter(0);
 	//Barrier with which threads wait until the end of a row
-	std::barrier greatBarrier(numThreads);
+	std::barrier greatBarrier(numThreads, [&](){
+		counter.store(0);
+	});
 	//Threads vector which will contain the threads that compute the elements
 	std::vector<std::thread> threads;
 	threads.reserve(numThreads);
 
-	auto staticParallelization = [&] (uint64_t threadId) -> void {
+	auto dynamicParallelization = [&] (uint64_t threadId) -> void {
 		//Integer that specifies the starting point for each threads based on its thread ID
-		uint64_t startPoint=threadId;
+		//uint64_t startPoint=threadId;
 
 		for(uint64_t k = 0; k< N; ++k) { 			       								// for each upper diagonal
-			for(uint64_t i = startPoint; i<(N-k); i+=numThreads) {						// for each elem. in the diagonal
-				work(std::chrono::microseconds(M[i*N+(i+k)])); 
+			while(counter<(N-k)) {														// for each elem. in the diagonal
+				uint64_t index=counter.fetch_add(1);
+				work(std::chrono::microseconds(M[index*N+(index+k)]));
 			}
 
 			if(threadId+1 > N-k){
@@ -53,15 +59,11 @@ void staticParallelWavefront(const std::vector<int> &M, const uint64_t &N, const
 	};
 
 	for (uint64_t i = 0; i < numThreads; i++){
-        threads.emplace_back(staticParallelization, i);
+        threads.emplace_back(dynamicParallelization, i);
     }
 
     for (auto& thread : threads)
         thread.join();
-}
-
-void dynamicParallelWavefront(const std::vector<int> &M, const uint64_t &N, const uint64_t &numThreads){
-	
 }
 
 int main(int argc, char *argv[]) {
@@ -111,7 +113,7 @@ int main(int argc, char *argv[]) {
 	std::printf("Estimated compute time ~ %f (ms)\n", expected_totaltime/1000.0);
 	
 	TIMERSTART(wavefront);
-	staticParallelWavefront(M, N, numThreads);
+	dynamicParallelWavefront(M, N, numThreads);
     TIMERSTOP(wavefront);
 
     return 0;
