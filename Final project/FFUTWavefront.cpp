@@ -2,8 +2,9 @@
 #include <cmath>
 #include <vector>
 #include <ff/parallel_for.hpp>
+#include <hpc_helpers.hpp>
 
-#define MAX_NUM_THREADS 40
+#define MAX_THREADS 40
 using namespace ff;
 
 
@@ -93,12 +94,12 @@ int main(int argc, char *argv[]) {
     init_matrix(M, N);
 
 	ffTime(START_TIME);
-	wavefront(M, N, numThreads); 
+	wavefront(M, N, numThreads);
     ffTime(STOP_TIME);
 
     // print_matrix(M, N);
-    std::cout << "Time: " << ffTime(GET_TIME) << " (ms)\n";
-    std::cout<<M[N-1];
+    std::cout << "# elapsed time (wavefront): " << ffTime(GET_TIME)/1000  << "s" << std::endl;
+    // std::cout<<M[N-1];
 
     return 0;
 }

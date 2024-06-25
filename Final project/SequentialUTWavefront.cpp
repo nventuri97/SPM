@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <algorithm>
 #include <hpc_helpers.hpp>
 
 using namespace std;
@@ -80,7 +81,7 @@ int main(int argc, char *argv[]) {
     TIMERSTOP(wavefront);
 
     // print_matrix(M, N);
-    std::cout << M[N-1];
+    //std::cout << M[N-1];
 
     return 0;
 }
