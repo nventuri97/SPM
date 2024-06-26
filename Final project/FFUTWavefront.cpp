@@ -14,21 +14,18 @@ void init_matrix(std::vector<double> &M, int N){
     }
 }
 
-std::vector<double> get_vector_m_k(const std::vector<double>& M, int N, int m, int k) {
-    std::vector<double> v(k);
-    for (int i = 0; i < k; ++i) {
-        v[i] = M[m * N + (m + i)]; // tutti gli elementi precedenti sulla stessa riga
+void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
+    ParallelFor pf(numThreads);
+    
+    for (int k = 1; k < N; ++k) {
+        pf.parallel_for(0, N-k, 1, [&, N, k](const int i) {
+            double acc=0;
+            for (int j = 0; j < k + 1; ++j) {
+                acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
+            }
+            M[i * N + (i+k)] = cbrt(acc);
+        });
     }
-    return v;
-}
-
-std::vector<double> get_vector_mk_k(const std::vector<double>& M, int N, int m, int k) {
-    std::vector<double> v(k);
-    for (int i = 0; i < k; ++i) {
-        v[i] = M[(m + i + 1) * N + (m + k)]; // tutti gli elementi precedenti sulla stessa colonna
-    }
-    std::reverse(v.begin(), v.end());
-    return v;
 }
 
 void print_matrix(const std::vector<double> &M, uint64_t N) {
@@ -50,25 +47,6 @@ void print_vector(const std::vector<double> v, int dim, bool vertical){
             std::cout<<" ";
     }
     std::cout<<std::endl;
-}
-
-void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
-    ParallelFor pf(numThreads);
-    
-    for (int i = 1; i < N; ++i) {
-        pf.parallel_for(0, N-i, 1, [&, N, i](const int j) {
-            std::vector<double> horizontal, vertical;
-            horizontal=get_vector_m_k(M, N, j, i);
-            // print_vector(horizontal, i, false);
-            vertical=get_vector_mk_k(M, N, j, i);
-            // print_vector(vertical, i, true);
-            double acc=0;
-            for (int z = 0; z < i; ++z) {
-                acc += horizontal[z] * vertical[z];
-            }
-            M[j * N + (j+i)] = cbrt(acc);
-        });
-    }
 }
 
 int main(int argc, char *argv[]) {

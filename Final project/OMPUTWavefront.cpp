@@ -40,18 +40,15 @@ void print_matrix(const std::vector<double> &M, int N) {
 void wavefront(std::vector<double> &M, int N, int numThreads) {
     omp_set_num_threads(numThreads);
 
-    std::vector<double> horizontal, vertical;
-    for (int i = 1; i < N; ++i) {
-        #pragma omp parallel for private(horizontal, vertical)
-        for (int j = 0; j < N - i; ++j) {
-            horizontal = get_vector_m_k(M, N, j, i);
-            vertical = get_vector_mk_k(M, N, j, i);
+    for (int k = 1; k < N; ++k) {
+        #pragma omp parallel for
+        for(int i=0; i<N-k; ++i) {
             double acc=0;
-            for (int z = 0; z < i; ++z) {
-                acc += horizontal[z] * vertical[z];
+            for (int j = 0; j < k + 1; ++j) {
+                acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
-            M[j * N + (j + i)] = cbrt(acc);
-        }
+            M[i * N + (i+k)]=cbrt(acc);
+        };
     }
 }
 
