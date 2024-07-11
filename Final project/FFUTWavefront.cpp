@@ -15,16 +15,18 @@ void init_matrix(std::vector<double> &M, int N){
 }
 
 void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
-    ParallelFor pf(numThreads);
+    ParallelFor pf(numThreads, true, true);
     
     for (int k = 1; k < N; ++k) {
+        if(numThreads>N-k)
+            numThreads--;
         pf.parallel_for(0, N-k, 1, [&, N, k](const int i) {
             double acc=0;
             for (int j = 0; j < k + 1; ++j) {
                 acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
             M[i * N + (i+k)] = cbrt(acc);
-        });
+        }, numThreads);
     }
 }
 
