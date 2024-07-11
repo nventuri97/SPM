@@ -15,7 +15,7 @@ LIBS            = -pthread
 SOURCES         = $(wildcard *.cpp)
 TARGET          = $(SOURCES:.cpp=)
 
-.PHONY: all clean cleanall run_single run_average
+.PHONY: all clean cleanall
 
 %: %.cpp
 	$(CXX) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o $@.o $< $(LIBS)

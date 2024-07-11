@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
-#include <algorithm>
 #include <hpc_helpers.hpp>
 
 using namespace std;
@@ -32,7 +31,7 @@ void wavefront(std::vector<double> &M, int N) {
                 acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
             M[i * N + (i+k)]=cbrt(acc);
-        };
+        }
     }
 }
 
@@ -60,7 +59,7 @@ int main(int argc, char *argv[]) {
 	wavefront(M, N); 
     TIMERSTOP(wavefront);
 
-    // print_matrix(M, N);
+    print_matrix(M, N);
     // std::cout << M[N-1];
 
     return 0;
