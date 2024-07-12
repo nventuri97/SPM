@@ -7,11 +7,11 @@ endif
 
 CXX             = g++ -std=c++20
 MPI    			= mpicxx -std=c++20
-OPTFLAGS	    = -O3 -DNDEBUG -ffast-math
+OPTFLAGS	    = -O3 -DNDEBUG -ffast-math -g
 CXXFLAGS       += -Wall
 
 INCLUDES	   	= -I. -I ../include -I $(FF_ROOT)
-LIBS            = -pthread
+LIBS            = -pthread -fopenmp #-fsanitize=address
 SOURCES         = $(wildcard *.cpp)
 TARGET          = $(SOURCES:.cpp=)
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include <hpc_helpers.hpp>
 #include <mpi.h>
+#include <omp.h>
 
 using namespace std;
 
@@ -27,29 +28,17 @@ void print_matrix(double *M, int N) {
     }
 }
 
-void wavefront(std::vector<double> &M, int N) {
-
-    for (int k = 1; k < N; ++k) {
-        for(int i=0; i<N-k; ++i) {
-            double acc=0;
-            for (int j = 0; j < k + 1; ++j) {
-                acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
-            }
-            M[i * N + (i+k)]=cbrt(acc);
-        }
-    }
-}
-
 int main(int argc, char *argv[]) {
-    int myRank=0;
-	int size=0;
-	
-	MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    
+    int myRank;
+	int size;
+	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-	uint64_t N = 512;    // default size of the matrix (NxN)
-    int numThreads = 0; //default number of thread if not specified
+	uint64_t N = 512;       // default size of the matrix (NxN)
+    int numThreads = 0;     //default number of thread if not specified
     
     if(myRank==0){
         if (argc != 1 && argc != 2 && argc != 3) {
@@ -65,23 +54,21 @@ int main(int argc, char *argv[]) {
 			numThreads = std::stol(argv[2]);
 		}
 	}
-
-    //Allocation of memory space for matrix M of size N*N
-    double *M = new double[N*N];
+ 
+    double *M = nullptr;
     
     if(!myRank){
+        //Allocation of memory space for matrix M of size N*N for all the process
+        M=new double[N*N];
         init_matrix(M, N);
-        MPI_Bcast(M, N*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
         print_matrix(M, N);
     }
 
-    /*******************NEW PART TO MODIFY******************************/
 	// Measure the current time
 	double start = MPI_Wtime();
 
     // Distribute work across processes
     for (int k = 1; k < N; ++k) {                               // k = 1 to N-1 (diagonals)
-    
         // The computation is divided by rows
         int overlap = 1;                                        // number of overlapping rows
         int numberOfRows = (N-k)/size;
@@ -95,10 +82,10 @@ int main(int argc, char *argv[]) {
         // Arrays for the chunk of data to work
         double *myData = new double[myRows*N];
 
-        // The process 0 must specify how many rows are sent to each process
+        // The process 0 must specify how many rows are sent to each process   
         int *sendCounts = nullptr;
         int *displs = nullptr;
-        
+
         if(!myRank){
             sendCounts = new int[size];
             displs = new int[size];
@@ -125,12 +112,13 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < myRows; ++i) {
             double result = 0.0;
 
-            // #pragma omp parallel for reduction(+:result)
+            #pragma omp parallel for num_threads(numThreads) reduction(+:result)
             for (int j = 0; j < k+1; ++j) {
                 // if(myRank==2){
                 //     printf("%f*%f\n",myData[row-j], myData[row+N+1+j]);
                 // }
-                result += myData[myRank + i * N + (i + k - j)] * myData[myRank + (i + j) * N + (i + k)];
+                if((myRank + i * N + (i + k - j)) < myRows*N && (myRank + (i + j) * N + (i + k)) < myRows*N)
+                    result += myData[myRank + i * N + (i + k - j)] * myData[myRank + (i + j) * N + (i + k)];
             }
             myData[myRank+i+k]=cbrt(result);  
         }
@@ -144,10 +132,14 @@ int main(int argc, char *argv[]) {
         }
     }
     /*******************END OF NEW PART*********************************/
+    double end = MPI_Wtime();
+
     if(!myRank){
+        std::cout << "Time with " << size << " processes: " << end-start << " seconds" << std::endl;
         printf("The final matrix is\n");
         print_matrix(M,N);
-    }  
+        delete[] M;
+    }
 
     MPI_Finalize();
 }
