@@ -22,16 +22,17 @@ void init_matrix(double *M, int N){
 void print_matrix(double *M, int N) {
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
-            std::cout << M[i * N + j] << " ";
+            printf("%lf ", M[i * N + j]);
         }
-        std::cout << std::endl;
+        printf("\n");
     }
 }
 
 int main(int argc, char *argv[]) {
-    int provided;
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-    
+    // int provided;
+    // MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    MPI_Init(&argc, &argv);
+
     int myRank;
 	int size;
 	MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
         //Allocation of memory space for matrix M of size N*N for all the process
         M=new double[N*N];
         init_matrix(M, N);
-        print_matrix(M, N);
+        // print_matrix(M, N);
     }
 
 	// Measure the current time
@@ -69,66 +70,76 @@ int main(int argc, char *argv[]) {
 
     // Distribute work across processes
     for (int k = 1; k < N; ++k) {                               // k = 1 to N-1 (diagonals)
-        // The computation is divided by rows
-        int overlap = 1;                                        // number of overlapping rows
-        int numberOfRows = (N-k)/size;
-        int myRows = numberOfRows+overlap;                      //this plus overlap is necessary because to compute the dot product a process needs at least of two row
-
-        // For the cases that 'rows' is not multiple of size
-        if(myRank < (N-k)%size){
-            myRows++;
+        if(N-k<size){
+            size--;
         }
 
-        // Arrays for the chunk of data to work
-        double *myData = new double[myRows*N];
+        if(myRank<size){
+            // The computation is divided by rows
+            int overlap = 1;                                    // number of overlapping rows
+            int numberOfRows = (N-k)/size;
+            int myRows = numberOfRows+k;                        //this plus overlap is necessary because to compute the dot product a process needs at least of two row
 
-        // The process 0 must specify how many rows are sent to each process   
-        int *sendCounts = nullptr;
-        int *displs = nullptr;
+            // For the cases that 'rows' is not multiple of size
+            if(myRank < (N-k)%size){
+                myRows++;
+            }
+            // printf("k=%d and myRows are %d\n", k, myRows);
 
-        if(!myRank){
-            sendCounts = new int[size];
-            displs = new int[size];
+            // Arrays for the chunk of data to work
+            double *myData = new  double[myRows*N];
 
-            displs[0] = 0;
+            // The process 0 must specify how many rows are sent to each process   
+            int *sendCounts = nullptr;
+            int *displs = nullptr;
 
-            for(int i=0; i<size; i++){
-                if(i>0){
-                    displs[i] = displs[i-1]+sendCounts[i-1]- overlap * N;
-                }
+            if(!myRank){
+                sendCounts = new int[size];
+                displs = new int[size];
 
-                if(i < (N-k)%size){
-                    sendCounts[i] = (numberOfRows+overlap+1)*N;
-                } else {
-                    sendCounts[i] = (numberOfRows+overlap)*N;
+                displs[0] = 0;
+
+                for(int i=0; i<size; i++){
+                    if(i>0){
+                        displs[i] = displs[i-1]+sendCounts[i-1]- k * N;
+                    }
+
+                    if(i < (N-k)%size){
+                        sendCounts[i] = (numberOfRows+k+1)*N;
+                    } else {
+                        sendCounts[i] = (numberOfRows+k)*N;
+                    }
+
+                    // printf("The sendCounts of %d is %d\n", i, sendCounts[i]);
+                    // printf("The displs of %d is %d\n", i, displs[i]);
                 }
             }
-        }
 
-        // Scatter the input matrix
-        MPI_Scatterv(M, sendCounts, displs, MPI_DOUBLE, myData, myRows*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            // Scatter the input matrix
+            MPI_Scatterv(M, sendCounts, displs, MPI_DOUBLE, myData, myRows*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-        //Each process computes its part of the diagonal
-        for (int i = 0; i < myRows; ++i) {
-            double result = 0.0;
+            //Each process computes its part of the diagonal
+            for (int i = 0; i < myRows-k; ++i) {
+                double result = 0.0;
 
-            #pragma omp parallel for num_threads(numThreads) reduction(+:result)
-            for (int j = 0; j < k+1; ++j) {
-                // if(myRank==2){
-                //     printf("%f*%f\n",myData[row-j], myData[row+N+1+j]);
-                // }
-                if((myRank + i * N + (i + k - j)) < myRows*N && (myRank + (i + j) * N + (i + k)) < myRows*N)
+                // #pragma omp parallel for num_threads(numThreads) reduction(+:result)
+                for (int j = 0; j < k+1; ++j) {
+                    // if(myRank==0){
+                    //    printf("My rank is %d: %f*%f = %f \n",myRank, myData[myRank + i * N + (i + k - j)], myData[myRank + (i + j) * N + (i + k)]);
+                    // }
                     result += myData[myRank + i * N + (i + k - j)] * myData[myRank + (i + j) * N + (i + k)];
+                }
+                // printf("My rank is %d: %f inserted in myData[%d] \n",myRank, cbrt(result), myRank+i+k);
+                myData[myRank+i+k]=cbrt(result);  
             }
-            myData[myRank+i+k]=cbrt(result);  
-        }
-     
-        MPI_Gatherv(myData, myRows*N, MPI_DOUBLE, M, sendCounts, displs, MPI_DOUBLE, 0, MPI_COMM_WORLD);   
+        
+            MPI_Gatherv(myData, myRows*N, MPI_DOUBLE, M, sendCounts, displs, MPI_DOUBLE, 0, MPI_COMM_WORLD);   
 
-        delete[] myData;
-        if(myRank==0){
-            delete[] sendCounts;
-            delete[] displs;
+            delete[] myData;
+            if(myRank==0){
+                delete[] sendCounts;
+                delete[] displs;
+            }
         }
     }
     /*******************END OF NEW PART*********************************/
@@ -136,8 +147,9 @@ int main(int argc, char *argv[]) {
 
     if(!myRank){
         std::cout << "Time with " << size << " processes: " << end-start << " seconds" << std::endl;
-        printf("The final matrix is\n");
-        print_matrix(M,N);
+        // printf("The final matrix is\n");
+        // print_matrix(M,N);
+        printf("%f\n", M[N-1]);
         delete[] M;
     }
 

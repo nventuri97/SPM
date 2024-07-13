@@ -13,12 +13,12 @@ void init_matrix(std::vector<double> &M, int N){
 }
 
 void print_matrix(const std::vector<double> &M, int N) {
-    std::cout << "Matrice risultante:" << std::endl;
+    printf("Matrice risultante:\n");
     for (int i = 0; i < N; ++i) {
         for (int j = 0; j < N; ++j) {
-            std::cout << M[i * N + j] << " ";
+            printf("%f ", M[i * N + j]);
         }
-        std::cout << std::endl;
+        printf("\n");
     }
 }
 
@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
 	wavefront(M, N); 
     TIMERSTOP(wavefront);
 
-    print_matrix(M, N);
-    // std::cout << M[N-1];
+    // print_matrix(M, N);
+    std::cout << M[N-1];
 
     return 0;
 }
