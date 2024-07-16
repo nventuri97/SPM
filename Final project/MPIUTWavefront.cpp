@@ -119,15 +119,20 @@ int main(int argc, char *argv[]) {
             // Scatter the input matrix
             MPI_Scatterv(M, sendCounts, displs, MPI_DOUBLE, myData, myRows*N, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
+            int shift = myRank * numberOfRows;
+            if((N-k)%size!=0 && myRank!=0){
+                shift+=(N-k)%size;
+            }
+            printf("MyRank is %d and my shift is %d\n", myRank, shift);
+
             //Each process computes its part of the diagonal
             for (int i = 0; i < myRows - k; ++i) {
-                int shift = myRank * numberOfRows * k;
                 double result = 0.0;
 
                 // #pragma omp parallel for num_threads(numThreads) reduction(+:result)
                 for (int j = 1; j < k+1; ++j) {
                     // if(myRank==1){
-                       printf("My rank is %d: %f*%f, from myData[%d], myData[%d]\n",myRank, myData[shift + i * N + (i + k - j)], myData[shift + (i + j) * N + (i + k)], shift + i * N + (i + k - j), shift + (i + j) * N + (i + k));
+                       printf("My rank is %d, calcolo l'elemento myData[%d]: %f*%f, from myData[%d], myData[%d]\n",myRank, shift + i * N + (i + k), myData[shift + i * N + (i + k - j)], myData[shift + (i + j) * N + (i + k)], shift + i * N + (i + k - j), shift + (i + j) * N + (i + k));
                     // }
                     result += myData[shift + i * N + (i + k - j)] * myData[shift + (i + j) * N + (i + k)];
                 }
