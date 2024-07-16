@@ -121,18 +121,19 @@ int main(int argc, char *argv[]) {
 
             //Each process computes its part of the diagonal
             for (int i = 0; i < myRows - k; ++i) {
+                int shift = myRank * numberOfRows * k;
                 double result = 0.0;
 
                 // #pragma omp parallel for num_threads(numThreads) reduction(+:result)
-                for (int j = 0; j < k+1; ++j) {
-                    if(myRank==1){
-                       printf("My rank is %d: %f*%f\n",myRank, myData[myRank + i * N + (i + k - j)], myData[myRank + (i + j) * N + (i + k)]);
-                    }
-                    result += myData[myRank + i * N + (i + k - j)] * myData[myRank + (i + j) * N + (i + k)];
+                for (int j = 1; j < k+1; ++j) {
+                    // if(myRank==1){
+                       printf("My rank is %d: %f*%f, from myData[%d], myData[%d]\n",myRank, myData[shift + i * N + (i + k - j)], myData[shift + (i + j) * N + (i + k)], shift + i * N + (i + k - j), shift + (i + j) * N + (i + k));
+                    // }
+                    result += myData[shift + i * N + (i + k - j)] * myData[shift + (i + j) * N + (i + k)];
                 }
-                if(myRank==1)
-                    printf("My rank is %d: %f inserted in myData[%d] \n",myRank, cbrt(result), myRank+i * N + (i + k));
-                myData[myRank + i * N + (i + k)]=cbrt(result);  
+                // if(myRank==0)
+                    printf("My rank is %d: %f inserted in myData[%d] \n",myRank, cbrt(result), shift+i * N + (i + k));
+                myData[shift + i * N + (i + k)]=cbrt(result);  
             }
         
             MPI_Gatherv(myData, myRows*N, MPI_DOUBLE, M, sendCounts, displs, MPI_DOUBLE, 0, MPI_COMM_WORLD);   
