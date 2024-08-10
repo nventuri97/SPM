@@ -40,17 +40,6 @@ void print_matrix(const std::vector<double> &M, uint64_t N) {
     }
 }
 
-void print_vector(const std::vector<double> v, int dim, bool vertical){
-    for(int i=0; i<dim;++i){
-        std::cout<<v[i];
-        if(vertical)
-            std::cout<<std::endl;
-        else
-            std::cout<<" ";
-    }
-    std::cout<<std::endl;
-}
-
 int main(int argc, char *argv[]) {
 
 	uint64_t N = 512;    // default size of the matrix (NxN)
@@ -62,6 +51,7 @@ int main(int argc, char *argv[]) {
         std::printf("     numThread number of thread\n");
 		return -1;
 	}
+
 	if (argc > 1) {
 		N = std::stol(argv[1]);
 		if (argc > 2) {
@@ -77,9 +67,9 @@ int main(int argc, char *argv[]) {
 	wavefront(M, N, numThreads);
     ffTime(STOP_TIME);
 
-    // print_matrix(M, N);
     std::cout << "# elapsed time (wavefront): " << ffTime(GET_TIME)/1000  << "s" << std::endl;
-    // std::cout<<M[N-1];
+    // print_matrix(M, N);
+    std::cout<<M[N-1] << endl;
 
     return 0;
 }

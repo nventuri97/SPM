@@ -27,7 +27,7 @@ void wavefront(std::vector<double> &M, int N) {
     for (int k = 1; k < N; ++k) {
         for(int i=0; i<N-k; ++i) {
             double acc=0;
-            for (int j = 0; j < k + 1; ++j) {
+            for (int j = 1; j < k + 1; ++j) {
                 acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
             M[i * N + (i+k)]=cbrt(acc);
@@ -44,11 +44,9 @@ int main(int argc, char *argv[]) {
 		std::printf("     N size of the square matrix\n");
 		return -1;
 	}
+
 	if (argc > 1) {
 		N = std::stol(argv[1]);
-		// if (argc > 2) {
-		// 	numThreads = std::stol(argv[2]);
-		// }
 	}
 	
     std::vector<double> M(N * N, 0.0);
@@ -60,7 +58,7 @@ int main(int argc, char *argv[]) {
     TIMERSTOP(wavefront);
 
     // print_matrix(M, N);
-    std::cout << M[N-1];
+    std::cout << M[N-1] << endl;
 
     return 0;
 }
