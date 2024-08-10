@@ -29,7 +29,7 @@ void print_matrix(double *M, int N) {
 }
 
 int main(int argc, char *argv[]) {
-    // int provided;
+    int provided;
     // MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
     MPI_Init(&argc, &argv);
 
@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
  
     double *M = nullptr;
     
-    if(!myRank){
+    if(myRank==0){
         //Allocation of memory space for matrix M of size N*N for all the process
         M=new double[N*N];
         init_matrix(M, N);
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 
 
     // Distribute work across processes from k = 1 to N-1 (diagonals)
-    for (int k = 1; k < N; ++k) {                             
+    for (int k = 1; k < N; ++k) {                       
         //If the number of elements to compute is less than the number of processes I decrease the number of processes
         if(N-k<size){
             size--;
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
             int *sendCounts = nullptr;
             int *displs = nullptr;
 
-            if(!myRank){
+            if(myRank==0){
                 sendCounts = new int[size];
                 displs = new int[size];
 
@@ -138,27 +138,27 @@ int main(int argc, char *argv[]) {
                 }
                 myData[shift + i * N + (i + k)]=cbrt(result);  
             }
-        
+
             MPI_Gatherv(myData, myRows*N, MPI_DOUBLE, M, sendCounts, displs, MPI_DOUBLE, 0, commChannel);   
 
             delete[] myData;
             if(myRank==0){
                 delete[] sendCounts;
                 delete[] displs;
-            }
-            
+            }             
         }
     }
     /*******************END OF NEW PART*********************************/
     double end = MPI_Wtime();
 
-    if(!myRank){
-        std::cout << "Time with " << size << " processes: " << end-start << " seconds" << std::endl;
+    if(myRank==0){
+        std::cout << "# elapsed time (wavefront): " << end-start << "s" << std::endl;
         // printf("The final matrix is\n");
         // print_matrix(M,N);
         printf("%f\n", M[N-1]);
         delete[] M;
     }
+
     MPI_Group_free(&world);
     // MPI_Comm_free(&commChannel);
 
