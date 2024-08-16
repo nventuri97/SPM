@@ -4,7 +4,7 @@
 #include <ff/parallel_for.hpp>
 #include <hpc_helpers.hpp>
 
-#define MAX_THREADS 40
+#define MAX_THREADS 32
 using namespace ff;
 
 
@@ -18,7 +18,7 @@ void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
     ParallelFor pf(numThreads, true, true);
     
     for (int k = 1; k < N; ++k) {
-        if(numThreads>N-k)
+        if(numThreads>N-k && numThreads>1)
             numThreads--;
         pf.parallel_for(0, N-k, 1, [&, N, k](const int i) {
             double acc=0;
@@ -43,7 +43,7 @@ void print_matrix(const std::vector<double> &M, uint64_t N) {
 int main(int argc, char *argv[]) {
 
 	uint64_t N = 512;    // default size of the matrix (NxN)
-    int numThreads = MAX_NUM_THREADS;
+    int numThreads = MAX_THREADS;
 	
 	if (argc != 1 && argc != 2 && argc != 3) {
 		std::printf("use: %s N numThreads\n", argv[0]);
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "# elapsed time (wavefront): " << ffTime(GET_TIME)/1000  << "s" << std::endl;
     // print_matrix(M, N);
-    std::cout<<M[N-1] << endl;
+    std::cout << M[N-1] << std::endl;
 
     return 0;
 }

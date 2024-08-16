@@ -2,7 +2,6 @@
 #SBATCH -p normal
 #SBATCH -N 1
 #SBATCH --ntasks=1
-#SBATCH --ntasks-per-node=1
 #SBATCH -o ./%j-seq.log
 #SBATCH -e ./%j-seq.err
 #SBATCH -t 02:00:00
