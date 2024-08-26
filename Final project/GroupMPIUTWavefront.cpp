@@ -77,9 +77,11 @@ int main(int argc, char *argv[]) {
         //If the number of elements to compute is less than the number of processes I decrease the number of processes
         if(N-k<size){
             size--;
-            // MPI_Comm_free(&commChannel);
+
             int exludedRank[1]={size};
             MPI_Group_excl(world, 1, exludedRank, &world);
+            
+            MPI_Comm_free(&commChannel);
             MPI_Comm_create(MPI_COMM_WORLD, world, &commChannel);
         }
 
@@ -159,8 +161,9 @@ int main(int argc, char *argv[]) {
         delete[] M;
     }
 
+    MPI_Comm_free(&commChannel);
     MPI_Group_free(&world);
-    // MPI_Comm_free(&commChannel);
+    
 
     MPI_Finalize();
 }

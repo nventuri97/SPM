@@ -11,7 +11,7 @@ OPTFLAGS	    = -O3 -DNDEBUG -ffast-math -g
 CXXFLAGS       += -Wall
 
 INCLUDES	   	= -I. -I ../include -I $(FF_ROOT)
-LIBS            = -pthread -fopenmp #-fsanitize=address
+LIBS            = -pthread -fopenmp
 SOURCES         = $(wildcard *.cpp)
 TARGET          = $(SOURCES:.cpp=)
 
@@ -23,20 +23,26 @@ TARGET          = $(SOURCES:.cpp=)
 mpi: MPIUTWavefront.cpp
 	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o MPIUTWavefront.o $< $(LIBS)
 
+group: GroupMPIUTWavefront.cpp
+	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o GroupMPIUTWavefront.o $< $(LIBS)
+
+broad: BroadMPIUTWavefront.cpp
+	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o BroadMPIUTWavefront.o $< $(LIBS)
+
 all: $(TARGET)
 
 run_test: 
 	./$(FILE) $(ARGS)
 
 # Run the program and calculate the average execution time over 10 runs
-run_multiple_tests: 
-	@rm -f temp_elapsed_times.txt; \
+run_multiple_tests:
+	@ ARG2=$(shell echo $(ARGS) | awk '{print $$2}'); \
 	for i in $$(seq 1 10); do \
-		./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times.txt; \
+		./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; \
 	done; \
 	echo "Average elapsed times over 10 executions:"; \
-	echo "$$(grep "Time: " temp_elapsed_times.txt | awk '{ total += $$2; count++ } END { print total/count "s" }')"; \
-	rm -f temp_elapsed_times.txt; 
+	echo "$$(grep "Time: " temp_elapsed_times_$$ARG2.txt | awk '{ total += $$2; count++ } END { print total/count "s" }')"; \
+	rm -f temp_elapsed_times_$$ARG2.txt; 
 
 clean: 
 	-rm -fr *.o *~
