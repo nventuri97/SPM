@@ -35,10 +35,15 @@ run_test:
 	./$(FILE) $(ARGS)
 
 # Run the program and calculate the average execution time over 10 runs
+# ./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; 
 run_multiple_tests:
 	@ ARG2=$(shell echo $(ARGS) | awk '{print $$2}'); \
 	for i in $$(seq 1 10); do \
-		./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; \
+		if echo "$(FILE)" | grep -q "MPI"; then \
+			mpirun ./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; \
+		else \
+			./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; \
+		fi \
 	done; \
 	echo "Average elapsed times over 10 executions:"; \
 	echo "$$(grep "Time: " temp_elapsed_times_$$ARG2.txt | awk '{ total += $$2; count++ } END { print total/count "s" }')"; \
