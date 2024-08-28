@@ -18,16 +18,11 @@ TARGET          = $(SOURCES:.cpp=)
 .PHONY: all clean cleanall
 
 %: %.cpp
-	$(CXX) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o $@.o $< $(LIBS)
-
-mpi: MPIUTWavefront.cpp
-	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o MPIUTWavefront.o $< $(LIBS)
-
-group: GroupMPIUTWavefront.cpp
-	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o GroupMPIUTWavefront.o $< $(LIBS)
-
-broad: BroadMPIUTWavefront.cpp
-	$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o BroadMPIUTWavefront.o $< $(LIBS)
+	@if echo "$<" | grep -q "MPI"; then \
+		$(MPI) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o $@.o $< $(LIBS); \
+	else \
+		$(CXX) $(INCLUDES) $(CXXFLAGS) $(OPTFLAGS) -o $@.o $< $(LIBS); \
+	fi
 
 all: $(TARGET)
 
@@ -35,7 +30,6 @@ run_test:
 	./$(FILE) $(ARGS)
 
 # Run the program and calculate the average execution time over 10 runs
-# ./$(FILE) $(ARGS) | grep "# elapsed time" | awk '{print "Time: " $$5}' >> temp_elapsed_times_$$ARG2.txt; 
 run_multiple_tests:
 	@ ARG2=$(shell echo $(ARGS) | awk '{print $$2}'); \
 	for i in $$(seq 1 10); do \
