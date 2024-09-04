@@ -7,14 +7,18 @@
 #define MAX_THREADS 32
 using namespace ff;
 
-
-void init_matrix(std::vector<double> &M, uint64_t N){
-    for (uint64_t i=0;i<N;i++){
-        M[i * N + i] = (i + 1) / static_cast<double>(N);
+void init_matrix(double *M, int N) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (j == i)
+                M[i * N + j] = (i + 1) / static_cast<double>(N);
+            else
+                M[i * N + j] = 0.0;
+        }
     }
 }
 
-void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
+void wavefront(double *M, uint64_t N, int numThreads) {
     ParallelFor pf(numThreads, true, true);
     
     for (uint64_t k = 1; k < N; ++k) {
@@ -31,7 +35,7 @@ void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
     }
 }
 
-void print_matrix(const std::vector<double> &M, uint64_t N) {
+void print_matrix(double *M, uint64_t N) {
     std::cout << "Matrice risultante:" << std::endl;
     for (uint64_t i = 0; i < N; ++i) {
         for (uint64_t j = 0; j < N; ++j) {
@@ -60,7 +64,7 @@ int main(int argc, char *argv[]) {
 		}
 	}
 	
-    std::vector<double> M(N * N, 0.0);
+    double *M=new double[N*N];
 
     init_matrix(M, N);
 

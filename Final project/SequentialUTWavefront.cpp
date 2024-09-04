@@ -6,13 +6,18 @@
 using namespace std;
 
 
-void init_matrix(std::vector<double> &M, u_int64_t N){
-    for (u_int64_t i=0;i<N;i++){
-        M[i * N + i] = (i + 1) / static_cast<double>(N);
+void init_matrix(double *M, int N) {
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            if (j == i)
+                M[i * N + j] = (i + 1) / static_cast<double>(N);
+            else
+                M[i * N + j] = 0.0;
+        }
     }
 }
 
-void print_matrix(const std::vector<double> &M, u_int64_t N) {
+void print_matrix(double *M, u_int64_t N) {
     printf("Matrice risultante:\n");
     for (u_int64_t i = 0; i < N; ++i) {
         for (u_int64_t j = 0; j < N; ++j) {
@@ -22,7 +27,7 @@ void print_matrix(const std::vector<double> &M, u_int64_t N) {
     }
 }
 
-void wavefront(std::vector<double> &M, u_int64_t N) {
+void wavefront(double *M, u_int64_t N) {
 
     for (u_int64_t k = 1; k < N; ++k) {
         for(u_int64_t i=0; i<N-k; ++i) {
@@ -50,7 +55,7 @@ int main(int argc, char *argv[]) {
 		N = std::stol(argv[1]);
 	}
 	
-    std::vector<double> M(N * N, 0.0);
+    double *M=new double[N*N];
 
     init_matrix(M, N);
 
