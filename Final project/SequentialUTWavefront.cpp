@@ -6,31 +6,32 @@
 using namespace std;
 
 
-void init_matrix(std::vector<double> &M, int N){
-    for (int i=0;i<N;i++){
+void init_matrix(std::vector<double> &M, u_int64_t N){
+    for (u_int64_t i=0;i<N;i++){
         M[i * N + i] = (i + 1) / static_cast<double>(N);
     }
 }
 
-void print_matrix(const std::vector<double> &M, int N) {
+void print_matrix(const std::vector<double> &M, u_int64_t N) {
     printf("Matrice risultante:\n");
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
+    for (u_int64_t i = 0; i < N; ++i) {
+        for (u_int64_t j = 0; j < N; ++j) {
             printf("%f ", M[i * N + j]);
         }
         printf("\n");
     }
 }
 
-void wavefront(std::vector<double> &M, int N) {
+void wavefront(std::vector<double> &M, u_int64_t N) {
 
-    for (int k = 1; k < N; ++k) {
-        for(int i=0; i<N-k; ++i) {
-            double acc=0;
-            for (int j = 1; j < k + 1; ++j) {
-                acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
+    for (u_int64_t k = 1; k < N; ++k) {
+        for(u_int64_t i=0; i<N-k; ++i) {
+            double dotProduct = 0.0;
+
+            for (u_int64_t j = 1; j < k + 1; ++j) {
+                dotProduct += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
-            M[i * N + (i+k)]=cbrt(acc);
+            M[i * N + (i+k)]=cbrt(dotProduct);
         }
     }
 }
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
 	uint64_t N = 512;    // default size of the matrix (NxN)
 	
 	if (argc != 1 && argc != 2) {
-		std::printf("use: %s N numThreads\n", argv[0]);
+		std::printf("use: %s N\n", argv[0]);
 		std::printf("     N size of the square matrix\n");
 		return -1;
 	}

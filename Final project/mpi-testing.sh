@@ -8,6 +8,6 @@
 #SBATCH -t 02:00:00
 
 echo "Test executed on: $SLURM_JOB_NODELIST with $SLURM_NTASKS"
-make broad
-make run_multiple_tests FILE="BroadMPIUTWavefront.o" ARGS="$1 $2"
+make $1
+make run_multiple_tests FILE="$1.o" ARGS="$2"
 echo "done"

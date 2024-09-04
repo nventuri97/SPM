@@ -8,8 +8,8 @@
 using namespace ff;
 
 
-void init_matrix(std::vector<double> &M, int N){
-    for (int i=0;i<N;i++){
+void init_matrix(std::vector<double> &M, uint64_t N){
+    for (uint64_t i=0;i<N;i++){
         M[i * N + i] = (i + 1) / static_cast<double>(N);
     }
 }
@@ -17,23 +17,24 @@ void init_matrix(std::vector<double> &M, int N){
 void wavefront(std::vector<double> &M, uint64_t N, int numThreads) {
     ParallelFor pf(numThreads, true, true);
     
-    for (int k = 1; k < N; ++k) {
-        if(numThreads>N-k && numThreads>1)
+    for (uint64_t k = 1; k < N; ++k) {
+        if((uint64_t) numThreads > N-k && numThreads>1)
             numThreads--;
-        pf.parallel_for(0, N-k, 1, [&, N, k](const int i) {
-            double acc=0;
-            for (int j = 0; j < k + 1; ++j) {
-                acc += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
+        pf.parallel_for(0, N-k, 1, [&, N, k](const uint64_t i) {
+            double dotProduct = 0.0;
+
+            for (uint64_t j = 0; j < k + 1; ++j) {
+                dotProduct += M[i * N + (i + k - j)] * M[(i + j) * N + (i + k)];
             }
-            M[i * N + (i+k)] = cbrt(acc);
+            M[i * N + (i+k)] = cbrt(dotProduct);
         }, numThreads);
     }
 }
 
 void print_matrix(const std::vector<double> &M, uint64_t N) {
     std::cout << "Matrice risultante:" << std::endl;
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
+    for (uint64_t i = 0; i < N; ++i) {
+        for (uint64_t j = 0; j < N; ++j) {
             std::cout << M[i * N + j] << " ";
         }
         std::cout << std::endl;
