@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
 
     // print_matrix(M, N);
     std::cout << M[N-1] << endl;
+    delete[] M;
 
     return 0;
 }
